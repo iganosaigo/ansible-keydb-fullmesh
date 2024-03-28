@@ -1,0 +1,29 @@
+---
+- name: Include | Tasks based on Distro or OS
+  ansible.builtin.include_tasks:
+    file: "{{ platform }}"
+    apply:
+      tags: install
+  with_first_found:
+    - files:
+        - "{{ ansible_distribution }}.yml"
+        - "{{ ansible_os_family }}.yml"
+      paths: "{{ role_path }}/tasks"
+  loop_control:
+    loop_var: platform
+  tags: install
+  when: keydb_target == "all" or keydb_target == inventory_hostname
+
+- name: Import | Tasks OS Tunning
+  ansible.builtin.import_tasks:
+    file: os-tunning.yml
+  tags: tune
+  when: keydb_target == "all" or keydb_target == inventory_hostname
+
+- name: Import | KeyDB Configuration
+  ansible.builtin.include_tasks:
+    file: configuration.yml
+    apply:
+      tags: configuration
+  tags: configuration
+  when: keydb_target == "all" or keydb_target == inventory_hostname

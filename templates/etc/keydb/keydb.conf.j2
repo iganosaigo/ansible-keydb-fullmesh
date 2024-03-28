@@ -1,0 +1,154 @@
+{{ ansible_managed | comment }}
+
+################################# GENERAL #####################################
+
+bind {{ keydb_config_bind | default('0.0.0.0') }}
+port {% if keydb_tls_enabled -%} 0 {%- else %}{{ keydb_config_port | default('6379') }}{% endif %}
+
+daemonize {{ keydb_config_daemonize | default('yes') }}
+supervised {{ keydb_config_supervised | default('systemd') }}
+server-threads {{ keydb_config_server_threads | default('2') }}
+server-thread-affinity {{ keydb_config_server_thread_affinity | default('true') }}
+
+protected-mode {{ keydb_config_protected_mode | default('yes') }}
+
+databases {{ keydb_config_databases | default('16') }}
+
+tcp-backlog {{ keydb_config_tcp_backlog | default('511') }}
+tcp-keepalive {{ keydb_config_tcp_keepalive | default('300') }}
+timeout {{ keydb_config_timeout | default('0') }}
+
+{% if keydb_config_unix_socket is defined %}
+unixsocket {{ keydb_config_unix_socket }}
+unixsocketperm {{ keydb_config_unix_socket_perm | default('700') }}
+{% endif %}
+
+pidfile /var/run/keydb/keydb-server.pid
+loglevel {{ keydb_config_loglevel | default('notice') }}
+logfile {{ keydb_config_logfile | default('/var/log/keydb/keydb.log') }}
+
+################################ SNAPSHOTTING  ################################
+
+{% if keydb_config_save is defined %}
+{% for save in keydb_config_save %}
+save {{ save }}
+{% endfor %}
+{% endif %}
+stop-writes-on-bgsave-error {{ keydb_config_stop_writes_on_bgsave_error | default('no') }}
+rdbcompression {{ keydb_config_rdbcompression | default('yes') }}
+rdbchecksum {{ keydb_config_rdbchecksum | default('yes') }}
+dbfilename {{ keydb_config_dbfilename | default('keydb_dump_default.rdb') }}
+dir {{ keydb_config_dir | default('/var/lib/keydb') }}
+
+################################# REPLICATION #################################
+
+repl-backlog-size {{ keydb_config_repl_backlog_size | default('20mb') }}
+repl-diskless-sync {{ keydb_config_repl_diskless_sync | default('no') }}
+repl-diskless-sync-delay {{ keydb_config_repl_diskless_sync_delay | default('10') }}
+repl-disable-tcp-nodelay {{ keydb_config_repl_disable_tcp_nodelay | default('no') }}
+slave-priority {{ keydb_config_slave_priority | default('100') }}
+min-slaves-to-write {{ keydb_config_min_slaves_to_write | default('0') }}
+min-slaves-max-lag {{ keydb_config_min_slaves_max_lag | default('20') }}
+multi-master {{ keydb_config_multi_master | default('yes') }}
+active-replica {{ keydb_config_active_replica | default('yes') }}
+tls-replication {{ keydb_tls_enabled | ternary('yes', 'no') }}
+tls-cluster {{ keydb_tls_enabled | ternary('yes', 'no') }}
+
+{% for server in _keydb_masters %}
+{% if keydb_node_selector == 'ip' %}
+{%- if server != hostvars[inventory_hostname]['ansible_default_ipv4']['address'] -%}
+replicaof {{ server }} {{ keydb_config_replication_port | default('6379') }}
+{% endif %}
+{% elif keydb_node_selector == 'hostname' %}
+{%- if server != hostvars[inventory_hostname]['ansible_hostname'] -%}
+replicaof {{ server }} {{ keydb_config_replication_port | default('6379') }}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% if keydb_config_replica_read_only is defined %}
+replica-read-only {{ keydb_config_replica_read_only | ternary('yes', 'no') }}
+{% endif %}
+
+################################## SECURITY ###################################
+
+{% if keydb_config_requirepass is defined %}
+requirepass {{ keydb_config_requirepass }}
+masterauth {{ keydb_config_requirepass }}
+{% endif %}
+{% if keydb_config_rename_commands is defined %}
+{% for command in keydb_config_rename_commands -%}
+rename-command {{ command }} "SEC{{ command }}"
+{% endfor %}
+{% endif %}
+tls-auth-clients {{ keydb_config_tls_auth_clients | default('no') }}
+{% if keydb_config_users is defined %}
+{% for user in keydb_config_users -%}
+user {{ user.name }} on >{{ user.password }} {{ user.permissions }}
+{% endfor %}
+{% endif %}
+
+################################### LIMITS ####################################
+
+maxclients {{ keydb_config_maxclients | default('100000') }}
+maxmemory {{ keydb_config_maxmemory | default('256m') }}
+
+maxmemory-policy {{ keydb_config_maxmemory_policy | default('allkeys-lru') }}
+maxmemory-samples {{ keydb_config_maxmemory_samples | default('5') }}
+
+############################## APPEND ONLY MODE ###############################
+
+appendonly {{ keydb_config_appendonly | default('yes') }}
+appendfilename {{ keydb_config_appendfilename | default('keydb_appendonly_default.aof') }}
+appendfsync {{ keydb_config_appendfsync | default('everysec') }}
+no-appendfsync-on-rewrite {{ keydb_config_no_appendfsync_on_rewrite | default('no') }}
+auto-aof-rewrite-percentage {{ keydb_config_auto_aof_rewrite_percentage | default('150') }}
+auto-aof-rewrite-min-size {{ keydb_config_auto_aof_rewrite_min_size | default('128mb') }}
+aof-load-truncated {{ keydb_config_aof_load_truncated | default('yes') }}
+aof-use-rdb-preamble {{ keydb_config_aof_use_rdb_preamble | default('no') }}
+
+################################ LUA SCRIPTING  ###############################
+
+lua-time-limit {{ keydb_config_lua_time_limit | default('5000') }}
+
+################################ REDIS CLUSTER  ###############################
+
+cluster-enabled no
+cluster-config-file {{ keydb_config_cluster_config_file | default('/var/lib/keydb/nodes_default.conf') }}
+cluster-node-timeout {{ keydb_config_cluster_node_timeout | default('5000') }}
+cluster-slave-validity-factor {{ keydb_config_cluster_slave_validity_factor | default('1') }}
+cluster-migration-barrier {{ keydb_config_cluster_migration_barrier | default('1') }}
+cluster-require-full-coverage {{ keydb_config_cluster_require_full_coverage | default('no') }}
+cluster-allow-reads-when-down {{ keydb_config_cluster_allow_reads_when_down | default('yes') }}
+repl-ping-slave-period {{ keydb_config_repl_ping_slave_period | default('2') }}
+
+################################## SLOW LOG ###################################
+
+slowlog-log-slower-than {{ keydb_config_slowlog_log_slower_than | default(10000) }}
+slowlog-max-len {{ keydb_config_slowlog_max_len | default(512) }}
+
+################################ LATENCY MONITOR ##############################
+
+latency-monitor-threshold {{ keydb_config_latency_monitor_threshold | default('3') }}
+
+############################# EVENT NOTIFICATION ##############################
+
+notify-keyspace-events {{ keydb_config_notify_keyspace_events | default('""') }}
+
+############################### ADVANCED CONFIG ###############################
+
+hash-max-ziplist-entries {{ keydb_config_hash_max_ziplist_entries | default('512') }}
+hash-max-ziplist-value {{ keydb_config_hash_max_ziplist_value | default('64') }}
+list-max-ziplist-size {{ keydb_config_list_max_ziplist_size | default('-2') }}
+list-compress-depth {{ keydb_config_list_compress_depth | default('0') }}
+set-max-intset-entries {{ keydb_config_set_max_intset_entries | default('512') }}
+zset-max-ziplist-entries {{ keydb_config_zset_max_ziplist_entries | default('128') }}
+zset-max-ziplist-value {{ keydb_config_zset_max_ziplist_value | default('64') }}
+hll-sparse-max-bytes {{ keydb_config_hll_sparse_max_bytes | default('3000') }}
+activerehashing {{ keydb_config_activerehashing | default('yes') }}
+client-output-buffer-limit normal {{ keydb_config_client_output_buffer_limit_normal | default('0 0 0')}}
+client-output-buffer-limit slave {{ keydb_config_client_output_buffer_limit_slave | default('256mb 64mb 60') }}
+client-output-buffer-limit pubsub {{ keydb_config_client_output_buffer_limit_pubsub | default('32mb 8mb 60') }}
+hz {{ keydb_config_hz | default('10') }}
+aof-rewrite-incremental-fsync {{ keydb_config_aof_rewrite_incremental_fsync | default('yes') }}
+

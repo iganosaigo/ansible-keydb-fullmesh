@@ -1,0 +1,19 @@
+dependencies: []
+
+galaxy_info:
+  role_name: keydb_fullmesh
+  author: iganosaigo
+  description: KeyDB full-mesh arch
+  license: MIT
+  min_ansible_version: '2.10'
+  # Fucking platform API doesn't work, thats why 'all'
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all

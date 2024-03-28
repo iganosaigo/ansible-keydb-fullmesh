@@ -1,0 +1,46 @@
+---
+keydb_version: 6.3.4
+keydb_group_name: keydb
+keydb_target: all
+keydb_node_selector: hostname
+keydb_restart_on_changes: true
+
+keydb_packages:
+  debian:
+    apt_repository: "https://download.keydb.dev/open-source-dist"
+    apt_key: "https://download.keydb.dev/open-source-dist/keyring.gpg"
+  redhat:
+    rpm_key: "https://download.keydb.dev/pkg/open_source/rpm/RPM-GPG-KEY-keydb"
+    pkg_base_url: "https://download.keydb.dev/pkg/open_source/rpm/centos"
+
+
+keydb_tls_enabled: false
+keydb_tls_files:
+  ca: "/etc/ssl/keydb/ca.pem"
+  cert: "/etc/ssl/keydb/cert.pem"
+  key: "/etc/ssl/keydb/key.pem"
+
+keydb_config_bind: "0.0.0.0"
+keydb_config_port: "6379"
+keydb_config_maxmemory: "64mb"
+keydb_config_dbfilename: "keydb_dump_default.rdb"
+keydb_config_rename_commands:
+  - FLUSHDB
+  - FLUSHALL
+  - KEYS
+  - SHUTDOWN
+
+keydb_sysctls:
+  - name: "vm.swappiness"
+    value: '5'
+  - name: "vm.overcommit_memory"
+    value: '1'
+
+keydb_thp_enable: true
+
+keydb_systemd:
+  LimitFSIZE: 'infinity'
+  LimitCPU: 'infinity'
+  LimitAS: 'infinity'
+  LimitNOFILE: 2000000
+  LimitNPROC: 2000000

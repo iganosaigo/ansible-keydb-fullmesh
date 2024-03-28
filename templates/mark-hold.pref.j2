@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+Package: keydb keydb-server keydb-tools
+Pin: version {{ keydb_version.split('.')[0] }}:{{ keydb_version }}-*
+Pin-Priority: 1001

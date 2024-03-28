@@ -1,0 +1,27 @@
+---
+- name: Apt_key | KeyDB signing key
+  ansible.builtin.apt_key:
+    url: "{{ keydb_packages.debian.apt_key }}"
+    state: present
+
+- name: Apt_repo | KeyDB source repository
+  ansible.builtin.apt_repository:
+    repo: "deb {{ keydb_packages.debian.apt_repository }} {{ ansible_distribution_release }} main"
+    filename: /etc/apt/sources.list.d/keydb
+    state: present
+    update_cache: true
+
+- name: Template | Apt mark for keydb
+  ansible.builtin.template:
+    src: mark-hold.pref.j2
+    dest: /etc/apt/preferences.d/keydb.pref
+    mode: '0644'
+    owner: root
+    group: root
+  register: __apt_mark_keydb
+
+- name: Apt | Install Keydb Package # noqa: package-latest
+  ansible.builtin.apt:
+    name: "keydb"
+    state: latest
+    allow_downgrade: true

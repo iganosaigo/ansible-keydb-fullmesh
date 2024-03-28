@@ -1,0 +1,75 @@
+---
+driver:
+  name: docker
+platforms:
+  - &default_platform
+    name: dev-keydb-m01
+    image: "geerlingguy/docker-${MOLECULE_DIST:-rockylinux8}-ansible:latest"
+    command: /lib/systemd/systemd
+    privileged: true
+    pre_build_image: true
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    networks:
+      - name: dev-keydb
+
+  - <<: *default_platform
+    name: dev-keydb-m02
+    image: "geerlingguy/docker-${MOLECULE_DIST:-rockylinux9}-ansible:latest"
+
+  - <<: *default_platform
+    name: dev-keydb-m03
+    image: "geerlingguy/docker-${MOLECULE_DIST:-debian11}-ansible:latest"
+
+  - <<: *default_platform
+    name: dev-keydb-m04
+    image: "geerlingguy/docker-${MOLECULE_DIST:-debian12}-ansible:latest"
+
+  - <<: *default_platform
+    name: dev-keydb-m05
+    image: "geerlingguy/docker-${MOLECULE_DIST:-ubuntu2004}-ansible:latest"
+
+  - <<: *default_platform
+    name: dev-keydb-m06
+    image: "geerlingguy/docker-${MOLECULE_DIST:-ubuntu2204}-ansible:latest"
+
+provisioner:
+  # options:
+  #   tags: test
+  name: ansible
+  log: true
+  inventory:
+    group_vars:
+      all:
+        keydb_role: master
+        keydb_sysctls: []
+        keydb_group_name: all
+        keydb_version: 6.3.4
+        keydb_config_maxmemory: "64mb"
+        keydb_thp_enable: false
+    host_vars:
+      dev-keydb-m01:
+        keydb_role: replica
+      dev-keydb-m03:
+        keydb_role: replica
+      dev-keydb-m05:
+        keydb_role: replica
+  config_options:
+    defaults:
+      deprecation_warnings: false
+      callback_whitelist: timer,profile_tasks
+      fact_caching: memory
+      forks: 100
+      stdout_callback: yaml
+      stderr_callback: yaml
+      gathering: smart
+      show_task_path_on_failure: true
+    connection:
+      pipelining: true
+
+verifier:
+  name: ansible

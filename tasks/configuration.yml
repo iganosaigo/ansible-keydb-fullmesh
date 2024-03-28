@@ -1,0 +1,44 @@
+- name: Set_fact | Grouping hosts info
+  ansible.builtin.set_fact:
+    _keydb_nodes: |
+      {{
+        {
+          'group': groups[keydb_group_name],
+          'hostvars': hostvars,
+          'keydb_role': keydb_role,
+        } | keydb_inventory
+      }}
+
+- name: Set_fact | Grouping hosts addresses
+  ansible.builtin.set_fact:
+    _keydb_masters: "{{ _keydb_nodes | keydb_select(role='master', type=selector) }}"
+    _keydb_replicas: "{{ _keydb_nodes | keydb_select(role='replica', type=selector) }}"
+  vars:
+    selector: "{{ keydb_node_selector }}"
+
+- name: File | Systemd Drop-in dir
+  ansible.builtin.file:
+    path: '/etc/systemd/system/keydb.service.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Manage KeyDB Changes
+
+- name: Template | Systemd Drop-in config file
+  ansible.builtin.template:
+    src: systemd/keydb-dropin.conf.j2
+    dest: /etc/systemd/system/keydb.service.d/keydb.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Manage KeyDB Changes
+
+- name: Template | KeyDB config file
+  ansible.builtin.template:
+    src: etc/keydb/keydb.conf.j2
+    dest: /etc/keydb/keydb.conf
+    mode: "0600"
+    owner: keydb
+    group: keydb
+  notify: Manage KeyDB Changes

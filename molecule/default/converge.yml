@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  pre_tasks:
+    - name: Apt | Install converge reqs
+      ansible.builtin.apt:
+        name:
+          - iproute2
+          - apt-utils
+          - gpg-agent
+        state: fixed
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Yum | Install
+      ansible.builtin.yum:
+        name:
+          - iproute
+      when: ansible_os_family == 'RedHat'
+
+  roles:
+    - keydb-fullmesh

@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+[Service]
+{% if keydb_tls_enabled %}
+ExecStart=
+ExecStart=/usr/bin/keydb-server /etc/keydb/keydb.conf \
+  --tls-cert-file {{ keydb_tls_files.cert }} \
+  --tls-key-file {{ keydb_tls_files.key }} \
+  --tls-ca-cert-file {{ keydb_tls_files.ca }} \
+  --tls-port {{ keydb_config.port }} \
+  --port 0
+{% endif %}
+
+{% if keydb_systemd is defined %}
+{% for key, value in keydb_systemd.items() %}
+{{ key }}={{ value }}
+{% endfor %}
+{% endif %}

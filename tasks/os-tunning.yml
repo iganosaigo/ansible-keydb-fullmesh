@@ -1,0 +1,19 @@
+---
+- name: Sysctl | KeyDB OS Tunning
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/65-keydb.conf
+    state: present
+    reload: true
+  loop: "{{ keydb_sysctls }}"
+
+
+- name: Template | Systemd Transparent Huge Pages
+  ansible.builtin.template:
+    src: systemd/disable-transparent-huge-pages.service.j2
+    dest: /etc/systemd/system/disable-transparent-huge-pages.service
+    mode: '0644'
+    owner: root
+    group: root
+  notify: THP Service

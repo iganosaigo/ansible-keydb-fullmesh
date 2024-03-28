@@ -1,0 +1,26 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Command | keydb-benchmark
+      ansible.builtin.command:
+        cmd: keydb-benchmark -h 127.0.0.1 -p 6379 -n 200 -c 10 -q
+      changed_when: false
+      register: __keydb_benchmark
+      failed_when: '"requests per second" not in __keydb_benchmark.stdout'
+
+    - name: Set_fact | Clear benchmark result from spaces and tabs
+      ansible.builtin.set_fact:
+        _bench_output: |
+            {% set result = [] %}
+            {% for p in __keydb_benchmark.stdout_lines %}
+            {% if not (p | regex_search('^[ \t]*$')) %}
+            {% set _ = result.append(p) %}
+            {% endif %}
+            {% endfor %}
+            {{ result }}
+
+    - name: Debug | keydb-benchmark output
+      ansible.builtin.debug:
+        msg: "{{ _bench_output }}"
