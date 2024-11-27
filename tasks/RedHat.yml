@@ -10,7 +10,6 @@
     _base_url: "{{ keydb_packages.redhat.pkg_base_url }}"
     _arch: "{{ ansible_architecture }}"
 
-
 - name: Set_fact | KeyDB package file name
   ansible.builtin.set_fact:
     _pkg_name: "keydb-{{ keydb_version }}-1.el{{ _rel }}.{{ _arch }}.rpm"
@@ -28,7 +27,7 @@
   ansible.builtin.get_url:
     url: "{{ _pkg_url }}"
     dest: "/tmp/{{ _pkg_name }}"
-    mode: '0755'
+    mode: "0755"
 
 - name: Yum | Install KeyDB remote package
   ansible.builtin.yum:

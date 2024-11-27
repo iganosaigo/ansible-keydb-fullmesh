@@ -15,12 +15,12 @@
   ansible.builtin.template:
     src: mark-hold.pref.j2
     dest: /etc/apt/preferences.d/keydb.pref
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   register: __apt_mark_keydb
 
-- name: Apt | Install Keydb Package # noqa: package-latest
+- name: Apt | Install Keydb Package
   ansible.builtin.apt:
     name: "keydb"
     state: latest
